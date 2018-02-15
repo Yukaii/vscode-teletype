@@ -46,6 +46,7 @@
     "@atom/teletype-client": "github:Yukaii/teletype-client",
     "dotenv": "^5.0.0",
     "electron-webrtc-patched": "^0.3.0",
+    "mkdirp-promise": "^5.0.1",
     "node-fetch": "^2.0.0"
   }
 }

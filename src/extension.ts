@@ -21,8 +21,6 @@ globalAny.RTCSessionDescription = rtc.RTCSessionDescription
 import {TeletypeClient, Errors} from '@atom/teletype-client';
 import GuestPortalBinding from './GuestPortalBinding';
 
-console.log(`AUTH_TOKEN = ${process.env.AUTH_TOKEN}`)
-
 export function activate(context: vscode.ExtensionContext) {
     let disposable = vscode.commands.registerCommand('teletype.join-portal', async () => {
         const portalId = await vscode.window.showInputBox({prompt: 'Enter portal ID'})
