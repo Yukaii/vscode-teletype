@@ -1,0 +1,51 @@
+{
+  "name": "vscode-teletype",
+  "displayName": "Teletype for VSCode",
+  "description": "Atom Teletype for VSCode",
+  "version": "0.0.1",
+  "publisher": "Yukai",
+  "engines": {
+    "vscode": "^1.19.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/extension",
+  "contributes": {
+    "commands": [
+      {
+        "command": "teletype.share-portal",
+        "title": "Share Portal",
+        "category": "Teletype"
+      },
+      {
+        "command": "teletype.join-portal",
+        "title": "Join Portal",
+        "category": "Teletype"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.42",
+    "@types/node": "^7.0.43",
+    "electron-rebuild": "^1.7.3",
+    "typescript": "^2.6.1",
+    "vscode": "^1.1.6"
+  },
+  "dependencies": {
+    "@atom/teletype-client": "github:Yukaii/teletype-client",
+    "dotenv": "^5.0.0",
+    "electron-webrtc-patched": "^0.3.0",
+    "node-fetch": "^2.0.0"
+  }
+}
