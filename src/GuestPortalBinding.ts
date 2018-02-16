@@ -42,17 +42,19 @@ export default class GuestPortalBinding {
 
 			this.registerWorkspaceEvents();
 		} catch (error) {
-			let message, description
+			let message, description, shortMessage
 			if (error instanceof Errors.PortalNotFoundError) {
 				message = 'Portal not found'
 				description = 'No portal exists with that ID. Please ask your host to provide you with their current portal ID.'
+				shortMessage = `${message}`
 			} else {
 				message = 'Failed to join portal'
 				description =
-					`Attempting to join portal ${this.portalId} failed with error: <code>${error.message}</code>\n\n` +
+					`Attempting to join portal ${this.portalId} failed with error: ${error.message}\n\n` +
 					'Please wait a few moments and try again.'
+				shortMessage = `${message}: ${error.message}`
 			}
-			vscode.window.showErrorMessage(`${message}: ${description}`);
+			vscode.window.showErrorMessage(shortMessage);
 			console.error(`${message}: ${description}`)
 		}
 	}
@@ -86,13 +88,11 @@ export default class GuestPortalBinding {
 	}
 
 	hostDidClosePortal () {
-		console.error('hostDidClosePortal')
-		throw NotImplementedError
+		vscode.window.showInformationMessage('Portal closed: Your host stopped sharing their editor.')
 	}
 
 	hostDidLoseConnection () {
-		console.error('hostDidLoseConnection')
-		throw NotImplementedError
+		vscode.window.showInformationMessage('Portal closed')
 	}
 
 	updateTether (followState, editorProxy, position) {
