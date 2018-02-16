@@ -40,7 +40,7 @@ export default class GuestPortalBinding {
       this.portal = await this.client.joinPortal(this.portalId)
       await this.portal.setDelegate(this)
 
-      vscode.workspace.onDidChangeTextDocument(this.applyChanges.bind(this))
+      this.registerWorkspaceEvents();
     } catch (error) {
       let message, description
       if (error instanceof Errors.PortalNotFoundError) {
@@ -199,10 +199,22 @@ export default class GuestPortalBinding {
     return buffer
   }
 
-  applyChanges (event : vscode.TextDocumentChangeEvent) {
+  private registerWorkspaceEvents () {
+    vscode.workspace.onDidChangeTextDocument(this.applyChanges.bind(this))
+    vscode.workspace.onWillSaveTextDocument(this.saveDocument.bind(this))
+  }
+
+  private applyChanges (event : vscode.TextDocumentChangeEvent) {
     const bufferBinding = this.bufferBindingsByBuffer.get(event.document)
     if (bufferBinding) {
       bufferBinding.propogateChanges(event.contentChanges)
+    }
+  }
+
+  private saveDocument (event : vscode.TextDocumentWillSaveEvent) {
+    const bufferBinding = this.bufferBindingsByBuffer.get(event.document)
+    if (bufferBinding) {
+      event.waitUntil(bufferBinding.requestSavePromise())
     }
   }
 

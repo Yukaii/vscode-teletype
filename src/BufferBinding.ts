@@ -98,6 +98,17 @@ export default class BufferBinding {
     })
   }
 
+  requestSavePromise () {
+    // never ending promise? 🎶
+    // FIXME: should patch TextDocument save event
+    // Guest cannot save document
+    return new Promise(() => {
+      this.bufferProxy.requestSave()
+    })
+  }
+
   save () {
+    // NOTE: guest will not recieve save event
+    this.buffer.save()
   }
 }
