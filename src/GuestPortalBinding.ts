@@ -7,6 +7,8 @@ import BufferProxy from '@atom/teletype-client/lib/buffer-proxy';
 import BufferBinding from './BufferBinding';
 import EditorBinding from './EditorBinding';
 
+import { NotImplementedError } from './error';
+
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -32,8 +34,23 @@ export default class GuestPortalBinding {
   }
 
   async initialize () {
-    this.portal = await this.client.joinPortal(this.portalId)
-    await this.portal.setDelegate(this)
+    try {
+      this.portal = await this.client.joinPortal(this.portalId)
+      await this.portal.setDelegate(this)
+    } catch (error) {
+      let message, description
+      if (error instanceof Errors.PortalNotFoundError) {
+        message = 'Portal not found'
+        description = 'No portal exists with that ID. Please ask your host to provide you with their current portal ID.'
+      } else {
+        message = 'Failed to join portal'
+        description =
+          `Attempting to join portal ${this.portalId} failed with error: <code>${error.message}</code>\n\n` +
+          'Please wait a few moments and try again.'
+      }
+      vscode.window.showErrorMessage(`${message}: ${description}`);
+      console.error(`${message}: ${description}`)
+    }
   }
 
   siteDidJoin (siteId) {
@@ -55,19 +72,23 @@ export default class GuestPortalBinding {
   }
 
   removeEditorProxy (editorProxy) {
-    throw('Not implemented yet')
+    console.error('removeEditorProxy')
+    throw NotImplementedError
   }
 
   updateActivePositions (positionsBySiteId) {
-    throw('Not implemented yet')
+    console.error('updateActivePositions')
+    throw NotImplementedError
   }
 
   hostDidClosePortal () {
-    throw('Not implemented yet')
+    console.error('hostDidClosePortal')
+    throw NotImplementedError
   }
 
   hostDidLoseConnection () {
-    throw('Not implemented yet')
+    console.error('hostDidLoseConnection')
+    throw NotImplementedError
   }
 
   updateTether (followState, editorProxy, position) {
@@ -81,7 +102,8 @@ export default class GuestPortalBinding {
   }
 
   dispose () {
-    throw('Not implemented yet')
+    console.error('dispose')
+    throw NotImplementedError
   }
 
   private async _updateTether (followState, editorProxy, position) {
