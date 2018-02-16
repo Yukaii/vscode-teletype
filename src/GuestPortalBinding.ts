@@ -202,7 +202,7 @@ export default class GuestPortalBinding {
   applyChanges (event : vscode.TextDocumentChangeEvent) {
     const bufferBinding = this.bufferBindingsByBuffer.get(event.document)
     if (bufferBinding) {
-      bufferBinding.applyChanges(event.contentChanges)
+      bufferBinding.propogateChanges(event.contentChanges)
     }
   }
 

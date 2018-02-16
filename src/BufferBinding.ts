@@ -24,11 +24,13 @@ export default class BufferBinding {
   private readonly isHost : boolean;
   private bufferProxy : BufferProxy;
   public didDispose : Function;
+  private updatingText : boolean;
 
   constructor ({buffer, isHost, didDispose}) {
     this.buffer = buffer;
     this.isHost = isHost;
     this.didDispose = didDispose;
+    this.updatingText = false;
   }
 
   dipose () {
@@ -53,11 +55,15 @@ export default class BufferBinding {
 
   updateText (textUpdates: TextUdpate[]) {
     this.editor.edit(builder => {
+      this.updatingText = true
       for (let i = textUpdates.length - 1; i >= 0; i--) {
         const {oldStart, oldEnd, newText} = textUpdates[i]
         builder.replace(this.createRange(oldStart, oldEnd), newText)
       }
-    }, { undoStopBefore: false, undoStopAfter: true })
+
+    }, { undoStopBefore: false, undoStopAfter: true }).then(() => {
+      this.updatingText = false
+    })
   }
 
   private createRange (start : Position, end : Position) : vscode.Range {
@@ -67,17 +73,19 @@ export default class BufferBinding {
     )
   }
 
-  applyChanges (changes : vscode.TextDocumentContentChangeEvent[]) {
-    changes.forEach(change => {
-      const { start, end } = change.range;
-      this.bufferProxy.setTextInRange(
-        // oldStart
-        { row: start.line, column: start.character },
-        // oldEnd
-        { row: end.line, column: end.character },
-        change.text
-      )
-    })
+  propogateChanges (changes : vscode.TextDocumentContentChangeEvent[]) {
+    if (!this.updatingText) {
+      changes.forEach(change => {
+        const { start, end } = change.range;
+        this.bufferProxy.setTextInRange(
+          // oldStart
+          { row: start.line, column: start.character },
+          // oldEnd
+          { row: end.line, column: end.character },
+          change.text
+        )
+      })
+    }
   }
 
   save () {
