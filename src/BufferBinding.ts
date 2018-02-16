@@ -67,6 +67,19 @@ export default class BufferBinding {
     )
   }
 
+  applyChanges (changes : vscode.TextDocumentContentChangeEvent[]) {
+    changes.forEach(change => {
+      const { start, end } = change.range;
+      this.bufferProxy.setTextInRange(
+        // oldStart
+        { row: start.line, column: start.character },
+        // oldEnd
+        { row: end.line, column: end.character },
+        change.text
+      )
+    })
+  }
+
   save () {
   }
 }

@@ -21,6 +21,7 @@ export default class GuestPortalBinding {
   private lastEditorProxyChangePromise : Promise<void>;
   private editorBindingsByEditorProxy : Map<EditorProxy, EditorBinding>;
   private bufferBindingsByBufferProxy : Map<BufferProxy, BufferBinding>;
+  private bufferBindingsByBuffer : Map<vscode.TextDocument, BufferBinding>
   private editorProxiesByEditor : WeakMap<vscode.TextEditor, EditorProxy>;
 
   constructor({ client, portalId, editor }) {
@@ -30,6 +31,7 @@ export default class GuestPortalBinding {
     this.lastEditorProxyChangePromise = Promise.resolve()
     this.editorBindingsByEditorProxy = new Map()
     this.bufferBindingsByBufferProxy = new Map()
+    this.bufferBindingsByBuffer = new Map()
     this.editorProxiesByEditor = new WeakMap()
   }
 
@@ -37,6 +39,8 @@ export default class GuestPortalBinding {
     try {
       this.portal = await this.client.joinPortal(this.portalId)
       await this.portal.setDelegate(this)
+
+      vscode.workspace.onDidChangeTextDocument(this.applyChanges.bind(this))
     } catch (error) {
       let message, description
       if (error instanceof Errors.PortalNotFoundError) {
@@ -104,6 +108,8 @@ export default class GuestPortalBinding {
   dispose () {
     console.error('dispose')
     throw NotImplementedError
+
+    // TODO: unregisterTextDocumentChangeEvent
   }
 
   private async _updateTether (followState, editorProxy, position) {
@@ -187,9 +193,17 @@ export default class GuestPortalBinding {
       bufferBinding.setBufferProxy(bufferProxy)
       bufferProxy.setDelegate(bufferBinding)
 
-      this.bufferBindingsByBufferProxy.set(bufferProxy, bufferBinding)
+      this.bufferBindingsByBuffer.set(buffer, bufferBinding);
+      this.bufferBindingsByBufferProxy.set(bufferProxy, bufferBinding);
     }
     return buffer
+  }
+
+  applyChanges (event : vscode.TextDocumentChangeEvent) {
+    const bufferBinding = this.bufferBindingsByBuffer.get(event.document)
+    if (bufferBinding) {
+      bufferBinding.applyChanges(event.contentChanges)
+    }
   }
 
 }
