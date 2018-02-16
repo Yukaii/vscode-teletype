@@ -19,9 +19,9 @@ export default class GuestPortalBinding {
   private readonly editor : vscode.TextEditor;
   private portal : Portal;
   private lastEditorProxyChangePromise : Promise<void>;
-  private editorBindingsByEditorProxy;
-  private bufferBindingsByBufferProxy;
-  private editorProxiesByEditor;
+  private editorBindingsByEditorProxy : Map<EditorProxy, EditorBinding>;
+  private bufferBindingsByBufferProxy : Map<BufferProxy, BufferBinding>;
+  private editorProxiesByEditor : WeakMap<vscode.TextEditor, EditorProxy>;
 
   constructor({ client, portalId, editor }) {
     this.client = client;
@@ -77,8 +77,8 @@ export default class GuestPortalBinding {
   }
 
   updateActivePositions (positionsBySiteId) {
-    console.error('updateActivePositions')
-    throw NotImplementedError
+    // Ignore this
+    // throw NotImplementedError
   }
 
   hostDidClosePortal () {
@@ -111,7 +111,8 @@ export default class GuestPortalBinding {
       const editor = await this.findOrCreateEditorForEditorProxy(editorProxy)
       // await this.toggleEmptyPortalPaneItem()
     } else {
-      this.editorBindingsByEditorProxy.forEach((b) => b.updateTether(followState))
+      // FIXME: WTF, upstream bug
+      this.editorBindingsByEditorProxy.forEach((b) => b.updateTether(followState, undefined))
     }
 
     const editorBinding = this.editorBindingsByEditorProxy.get(editorProxy)
@@ -128,6 +129,7 @@ export default class GuestPortalBinding {
     } else {
       const {bufferProxy} = editorProxy
       const buffer = await this.findOrCreateBufferForBufferProxy(bufferProxy)
+      const bufferBinding = this.bufferBindingsByBufferProxy.get(bufferProxy)
 
       // thinks reload
       await vscode.workspace.openTextDocument(buffer.uri)
@@ -141,6 +143,9 @@ export default class GuestPortalBinding {
       })
       // keep open editor
       await vscode.commands.executeCommand('workbench.action.keepEditor')
+      // bind editor to bufferBinding lately
+      // since we need vscode.TextEditor instance to apply edit operations
+      bufferBinding.setEditor(editor);
 
       editorBinding.setEditorProxy(editorProxy)
       editorProxy.setDelegate(editorBinding)

@@ -3,7 +3,8 @@ import Portal from '@atom/teletype-client/lib/portal';
 import EditorProxy from '@atom/teletype-client/lib/editor-proxy';
 
 export default class EditorBinding {
-  private readonly editor : vscode.TextEditor;
+  public readonly editor : vscode.TextEditor;
+
   private portal : Portal;
   private readonly isHost : boolean;
   private editorProxy : EditorProxy;
@@ -24,8 +25,9 @@ export default class EditorBinding {
     this.positionsBySiteId = {}
   }
 
-  dipose () {
-
+  onDidDispose (onDidDipose) {
+    // TODO: bind depose callback
+    this.onDidDispose = onDidDipose
   }
 
   setEditorProxy (editorProxy : EditorProxy) {
