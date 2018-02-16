@@ -117,6 +117,8 @@ export default class GuestPortalBinding {
         portal: this.portal,
         isHost: false
       })
+      // keep open editor
+      await vscode.commands.executeCommand('workbench.action.keepEditor')
 
       editorBinding.setEditorProxy(editorProxy)
       editorProxy.setDelegate(editorBinding)
