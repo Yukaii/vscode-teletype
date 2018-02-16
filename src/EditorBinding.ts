@@ -3,48 +3,48 @@ import Portal from '@atom/teletype-client/lib/portal';
 import EditorProxy from '@atom/teletype-client/lib/editor-proxy';
 
 export default class EditorBinding {
-  public readonly editor : vscode.TextEditor;
+	public readonly editor : vscode.TextEditor;
 
-  private portal : Portal;
-  private readonly isHost : boolean;
-  private editorProxy : EditorProxy;
+	private portal : Portal;
+	private readonly isHost : boolean;
+	private editorProxy : EditorProxy;
 
-  private markerLayersBySiteId;
-  private markersByLayerAndId;
-  private preserveFollowState;
-  private positionsBySiteId;
+	private markerLayersBySiteId;
+	private markersByLayerAndId;
+	private preserveFollowState;
+	private positionsBySiteId;
 
-  constructor ({editor, portal, isHost}) {
-    this.editor = editor
-    this.portal = portal
-    this.isHost = isHost
+	constructor ({editor, portal, isHost}) {
+		this.editor = editor
+		this.portal = portal
+		this.isHost = isHost
 
-    this.markerLayersBySiteId = new Map()
-    this.markersByLayerAndId = new WeakMap()
-    this.preserveFollowState = false
-    this.positionsBySiteId = {}
-  }
+		this.markerLayersBySiteId = new Map()
+		this.markersByLayerAndId = new WeakMap()
+		this.preserveFollowState = false
+		this.positionsBySiteId = {}
+	}
 
-  onDidDispose (onDidDipose) {
-    // TODO: bind depose callback
-    this.onDidDispose = onDidDipose
-  }
+	onDidDispose (onDidDipose) {
+		// TODO: bind depose callback
+		this.onDidDispose = onDidDipose
+	}
 
-  setEditorProxy (editorProxy : EditorProxy) {
-    this.editorProxy = editorProxy
-  }
+	setEditorProxy (editorProxy : EditorProxy) {
+		this.editorProxy = editorProxy
+	}
 
-  updateSelectionsForSiteId (siteId, selections) {
+	updateSelectionsForSiteId (siteId, selections) {
 
-  }
+	}
 
-  isScrollNeededToViewPosition (position) {
+	isScrollNeededToViewPosition (position) {
 
-  }
+	}
 
-  updateTether (state, position) {
-  }
+	updateTether (state, position) {
+	}
 
-  clearSelectionsForSiteId (siteId) {
-  }
+	clearSelectionsForSiteId (siteId) {
+	}
 }

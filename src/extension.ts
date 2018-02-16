@@ -22,41 +22,41 @@ import {TeletypeClient, Errors} from '@atom/teletype-client';
 import GuestPortalBinding from './GuestPortalBinding';
 
 export function activate(context: vscode.ExtensionContext) {
-    let disposable = vscode.commands.registerCommand('teletype.join-portal', async () => {
-        const portalId = await vscode.window.showInputBox({prompt: 'Enter portal ID'})
-        // TODO: simple validation portal ID
-        await joinPortal(portalId);
-    });
+	let disposable = vscode.commands.registerCommand('teletype.join-portal', async () => {
+		const portalId = await vscode.window.showInputBox({prompt: 'Enter portal ID'})
+		// TODO: simple validation portal ID
+		await joinPortal(portalId);
+	});
 
-    context.subscriptions.push(disposable);
+	context.subscriptions.push(disposable);
 }
 
 async function joinPortal (portalId) {
 
-    const client = new TeletypeClient({
-        pusherKey: 'f119821248b7429bece3',
-        pusherOptions: {
-            cluster: 'mt1'
-        },
-        baseURL: 'https://api.teletype.atom.io'
-    });
+	const client = new TeletypeClient({
+		pusherKey: 'f119821248b7429bece3',
+		pusherOptions: {
+			cluster: 'mt1'
+		},
+		baseURL: 'https://api.teletype.atom.io'
+	});
 
-    client.onConnectionError = (event) => {
-        throw(`Connection Error: An error occurred with a teletype connection: ${event.message}`);
-    }
+	client.onConnectionError = (event) => {
+		throw(`Connection Error: An error occurred with a teletype connection: ${event.message}`);
+	}
 
-    await client.initialize();
+	await client.initialize();
 
-    // manually signin
-    // TODO: Remove this
-    await client.signIn(process.env.AUTH_TOKEN)
+	// manually signin
+	// TODO: Remove this
+	await client.signIn(process.env.AUTH_TOKEN)
 
-    const portalBinding = new GuestPortalBinding({
-        portalId,
-        client,
-        editor: vscode.window.activeTextEditor
-    });
-    await portalBinding.initialize()
+	const portalBinding = new GuestPortalBinding({
+		portalId,
+		client,
+		editor: vscode.window.activeTextEditor
+	});
+	await portalBinding.initialize()
 }
 
 // this method is called when your extension is deactivated
