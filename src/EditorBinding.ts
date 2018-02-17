@@ -32,6 +32,10 @@ export default class EditorBinding {
 		this.selectionDecorationByMarkerId = new Map();
 	}
 
+	dispose () {
+		// TODO:
+	}
+
 	onDidDispose (onDidDipose) {
 		// TODO: bind depose callback
 		this.onDidDispose = onDidDipose
