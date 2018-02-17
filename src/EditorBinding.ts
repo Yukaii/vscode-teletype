@@ -14,8 +14,8 @@ export default class EditorBinding {
 	private readonly isHost : boolean;
 	private editorProxy : EditorProxy;
 	private localSelectionMap : SelectionMap;
-	private selectionDecorationBySiteId : Map<number, vscode.TextEditorDecorationType>;
-	private selectionRangesBySiteId : Map<number, Map<number, vscode.Range>>
+	private selectionRangesBySiteId : Map<number, Map<number, vscode.Range>>;
+	private selectionDecorationByMarkerId : Map<number, vscode.TextEditorDecorationType>;
 
 	private preserveFollowState;
 	private positionsBySiteId;
@@ -28,8 +28,8 @@ export default class EditorBinding {
 		this.preserveFollowState = false
 		this.localSelectionMap = {};
 		this.positionsBySiteId = {};
-		this.selectionDecorationBySiteId = new Map();
 		this.selectionRangesBySiteId = new Map();
+		this.selectionDecorationByMarkerId = new Map();
 	}
 
 	onDidDispose (onDidDipose) {
@@ -43,34 +43,29 @@ export default class EditorBinding {
 
 	updateSelectionsForSiteId (siteId : number, selections : SelectionMap) {
 		let markerIdRangeMap : Map<number, vscode.Range>;
-		const decorationType = this.findOrCreateSelectionDecorationFromSiteId(siteId);
 		let clearRanges : vscode.Range[] = [];
-		let selectionRanges : vscode.Range[] = [];
 
 		Object.keys(selections).forEach(markerId => {
 			markerIdRangeMap = this.findOrCreateMarkRangeMapFromSiteId(siteId);
 			const markerUpdate = selections[markerId];
 			const markerIdInt = parseInt(markerId);
+			const decorationType = this.findOrCreateSelectionDecorationFromMarkerId(markerIdInt)
+
 			if (markerUpdate) {
 				const range = this.convertTeletypeRange(markerUpdate.range)
-
 				markerIdRangeMap.set(markerIdInt, range);
 				this.selectionRangesBySiteId.set(siteId, markerIdRangeMap);
-				selectionRanges = selectionRanges.concat(range);
-			} else {
+
+				this.editor.setDecorations(decorationType, [range]);
+			} else { // selection clearance
+				this.selectionDecorationByMarkerId.delete(markerIdInt)
 				clearRanges = clearRanges.concat(markerIdRangeMap.get(markerIdInt))
 			}
 		});
-
-		selectionRanges = selectionRanges.filter(r => r)
 		clearRanges = clearRanges.filter(r => r)
 
 		if (clearRanges.length > 0) {
 			this.editor.setDecorations(NullDecoration, clearRanges);
-		}
-
-		if (selectionRanges.length > 0) {
-			this.editor.setDecorations(decorationType, selectionRanges);
 		}
 	}
 
@@ -81,6 +76,9 @@ export default class EditorBinding {
 	updateTether (state, position) {
 	}
 
+	/**
+	 * Clear site selections when site did leave portal
+	 */
 	clearSelectionsForSiteId (siteId) {
 		const markerIdRangeMap = this.findOrCreateMarkRangeMapFromSiteId(siteId)
 		const ranges = Array.from(markerIdRangeMap.values())
@@ -143,13 +141,14 @@ export default class EditorBinding {
 		)
 	}
 
-	private findOrCreateSelectionDecorationFromSiteId (siteId : number) : vscode.TextEditorDecorationType {
-		let decoration = this.selectionDecorationBySiteId.get(siteId);
+	private findOrCreateSelectionDecorationFromMarkerId (markerId : number) : vscode.TextEditorDecorationType {
+		// TODO: get each site's color from map
+		let decoration = this.selectionDecorationByMarkerId.get(markerId);
 		if (!decoration) {
 			decoration = vscode.window.createTextEditorDecorationType({
 				backgroundColor: `rgba(123, 0, 0, 0.5)`
 			})
-			this.selectionDecorationBySiteId.set(siteId, decoration)
+			this.selectionDecorationByMarkerId.set(markerId, decoration)
 		}
 		return decoration
 	}
