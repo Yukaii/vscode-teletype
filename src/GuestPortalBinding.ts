@@ -57,6 +57,7 @@ export default class GuestPortalBinding {
 				shortMessage = `${message}: ${error.message}`
 			}
 			vscode.window.showErrorMessage(shortMessage);
+			console.error(error);
 			console.error(`${message}: ${description}`)
 		}
 	}
