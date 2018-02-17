@@ -22,6 +22,7 @@ export default class GuestPortalBinding {
 	private editorBindingsByEditorProxy : Map<EditorProxy, EditorBinding>;
 	private bufferBindingsByBufferProxy : Map<BufferProxy, BufferBinding>;
 	private bufferBindingsByBuffer : Map<vscode.TextDocument, BufferBinding>
+	private editorBindingsByEditor : Map<vscode.TextEditor, EditorBinding>
 	private editorProxiesByEditor : WeakMap<vscode.TextEditor, EditorProxy>;
 
 	constructor({ client, portalId, editor }) {
@@ -32,6 +33,7 @@ export default class GuestPortalBinding {
 		this.editorBindingsByEditorProxy = new Map()
 		this.bufferBindingsByBufferProxy = new Map()
 		this.bufferBindingsByBuffer = new Map()
+		this.editorBindingsByEditor = new Map()
 		this.editorProxiesByEditor = new WeakMap()
 	}
 
@@ -158,6 +160,7 @@ export default class GuestPortalBinding {
 
 			this.editorBindingsByEditorProxy.set(editorProxy, editorBinding)
 			this.editorProxiesByEditor.set(editor, editorProxy)
+			this.editorBindingsByEditor.set(editor, editorBinding)
 
 			editorBinding.onDidDispose(() => {
 				this.editorProxiesByEditor.delete(editor)
@@ -202,6 +205,7 @@ export default class GuestPortalBinding {
 	private registerWorkspaceEvents () {
 		vscode.workspace.onDidChangeTextDocument(this.applyChanges.bind(this))
 		vscode.workspace.onWillSaveTextDocument(this.saveDocument.bind(this))
+		vscode.window.onDidChangeTextEditorSelection(this.triggerSelectionChanges.bind(this))
 	}
 
 	private applyChanges (event : vscode.TextDocumentChangeEvent) {
@@ -215,6 +219,13 @@ export default class GuestPortalBinding {
 		const bufferBinding = this.bufferBindingsByBuffer.get(event.document)
 		if (bufferBinding) {
 			event.waitUntil(bufferBinding.requestSavePromise())
+		}
+	}
+
+	private triggerSelectionChanges(event : vscode.TextEditorSelectionChangeEvent) {
+		const editorBinding = this.editorBindingsByEditor.get(event.textEditor);
+		if (editorBinding) {
+			editorBinding.updateSelections(event.selections)
 		}
 	}
 

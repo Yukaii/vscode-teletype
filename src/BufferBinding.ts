@@ -4,19 +4,7 @@ import * as vscode from 'vscode';
 import BufferProxy from '@atom/teletype-client/lib/buffer-proxy';
 import * as PQueue from 'p-queue';
 
-interface Position {
-	row: number;
-	column: number;
-}
-
-interface TextUdpate {
-	oldStart: Position;
-	oldEnd: Position;
-	newStart: Position;
-	newEnd: Position;
-	oldText: string;
-	newText: string;
-}
+import { Position, TextUdpate } from './teletype_types';
 
 // Buffer is TextDocument in vscode
 export default class BufferBinding {
