@@ -3,6 +3,11 @@ export interface Position {
 	column: number;
 }
 
+export interface Range {
+	start: Position;
+	end: Position;
+}
+
 export interface TextUdpate {
 	oldStart: Position;
 	oldEnd: Position;
@@ -14,10 +19,7 @@ export interface TextUdpate {
 
 export interface Selection {
 	exclusive?: boolean;
-	range: {
-		start: Position;
-		end: Position;
-	};
+	range: Range;
 	reversed: boolean;
 	tailed?: boolean;
 }
