@@ -4,8 +4,15 @@ import EditorProxy from '@atom/teletype-client/lib/editor-proxy';
 
 import { SelectionMap, Selection, Position, Range } from './teletype_types';
 
-const NullDecoration = vscode.window.createTextEditorDecorationType({
-})
+enum RangeType {
+	Cursor,
+	Selection
+}
+
+interface SiteDecoration {
+	cursorDecoration : vscode.TextEditorDecorationType;
+	selectionDecoration : vscode.TextEditorDecorationType;
+}
 
 export default class EditorBinding {
 	public readonly editor : vscode.TextEditor;
@@ -14,8 +21,11 @@ export default class EditorBinding {
 	private readonly isHost : boolean;
 	private editorProxy : EditorProxy;
 	private localSelectionMap : SelectionMap;
-	private selectionRangesBySiteId : Map<number, Map<number, vscode.Range>>;
-	private selectionDecorationByMarkerId : Map<number, vscode.TextEditorDecorationType>;
+
+	private selectionRangesBySiteId : Map<number, vscode.Range[]>;
+	private cursorRangesBySiteId : Map<number, vscode.Range[]>;
+	private decorationBySiteId : Map<number, SiteDecoration>
+	private localMarkerSelectionMap : Map<number, SelectionMap>
 
 	private preserveFollowState;
 	private positionsBySiteId;
@@ -28,8 +38,11 @@ export default class EditorBinding {
 		this.preserveFollowState = false
 		this.localSelectionMap = {};
 		this.positionsBySiteId = {};
+
 		this.selectionRangesBySiteId = new Map();
-		this.selectionDecorationByMarkerId = new Map();
+		this.cursorRangesBySiteId = new Map();
+		this.decorationBySiteId = new Map();
+		this.localMarkerSelectionMap = new Map();
 	}
 
 	dispose () {
@@ -46,36 +59,44 @@ export default class EditorBinding {
 	}
 
 	updateSelectionsForSiteId (siteId : number, selections : SelectionMap) {
-		let markerIdRangeMap : Map<number, vscode.Range>;
-		let clearRanges : vscode.Range[] = [];
+		let oldSelectionMap = this.localMarkerSelectionMap.get(siteId)
+		const selectionMap = {...oldSelectionMap, ...selections}
+		this.localMarkerSelectionMap.set(siteId, selectionMap);
 
-		Object.keys(selections).forEach(markerId => {
-			markerIdRangeMap = this.findOrCreateMarkRangeMapFromSiteId(siteId);
-			const markerUpdate = selections[markerId];
-			const markerIdInt = parseInt(markerId);
-			const decorationType = this.findOrCreateSelectionDecorationFromMarkerId(markerIdInt)
-			const oldRange = markerIdRangeMap.get(markerIdInt);
-
-			if (markerUpdate) {
-				const range = this.convertTeletypeRange(markerUpdate.range)
-				markerIdRangeMap.set(markerIdInt, range);
-				this.selectionRangesBySiteId.set(siteId, markerIdRangeMap);
-
-				if (oldRange) {
-					this.editor.setDecorations(NullDecoration, [oldRange]);
+		let cursorRanges : vscode.Range[] = [];
+		let selectionRanges : vscode.Range[] = [];
+		Object.keys(selectionMap).forEach(markerId => {
+			const selection = selectionMap[parseInt(markerId)]
+			if (selection) {
+				if (this.isCursor(selection)) {
+					cursorRanges = cursorRanges.concat(this.convertTeletypeRange(selection.range))
+				} else {
+					if (selection.tailed) {
+						const cursorRange = this.getCursorRangeFromSelection(selection)
+						cursorRanges = cursorRanges.concat(this.convertTeletypeRange(cursorRange));
+					}
+					selectionRanges = selectionRanges.concat(this.convertTeletypeRange(selection.range))
 				}
-
-				this.editor.setDecorations(decorationType, [range]);
-			} else { // selection clearance
-				this.selectionDecorationByMarkerId.delete(markerIdInt)
-				clearRanges = clearRanges.concat(oldRange)
 			}
-		});
-		clearRanges = clearRanges.filter(r => r)
+		})
 
-		if (clearRanges.length > 0) {
-			this.editor.setDecorations(NullDecoration, clearRanges);
+		let siteDecoration = this.findOrCreateSiteDecoration(siteId);
+		this.updateDecorations(siteDecoration, cursorRanges, selectionRanges);
+	}
+
+	private updateDecorations(siteDecoration: SiteDecoration, cursorRanges: vscode.Range[], selectionRanges: vscode.Range[]) {
+		const { cursorDecoration, selectionDecoration } = siteDecoration;
+		this.editor.setDecorations(cursorDecoration, cursorRanges);
+		this.editor.setDecorations(selectionDecoration, selectionRanges);
+	}
+
+	private findOrCreateSiteDecoration(siteId: number) {
+		let siteDecoration = this.decorationBySiteId.get(siteId);
+		if (!siteDecoration) {
+			siteDecoration = this.createDecorationFromSiteId(siteId);
+			this.decorationBySiteId.set(siteId, siteDecoration);
 		}
+		return siteDecoration;
 	}
 
 	isScrollNeededToViewPosition (position) {
@@ -89,12 +110,8 @@ export default class EditorBinding {
 	 * Clear site selections when site did leave portal
 	 */
 	clearSelectionsForSiteId (siteId) {
-		const markerIdRangeMap = this.findOrCreateMarkRangeMapFromSiteId(siteId)
-		const ranges = Array.from(markerIdRangeMap.values())
-
-		if (ranges.length > 0) {
-			this.editor.setDecorations(NullDecoration, ranges)
-		}
+		const siteDecoration = this.findOrCreateSiteDecoration(siteId);
+		this.updateDecorations(siteDecoration, [], [])
 	}
 
 	updateSelections (selections : vscode.Selection[]) {
@@ -150,25 +167,46 @@ export default class EditorBinding {
 		)
 	}
 
-	private findOrCreateSelectionDecorationFromMarkerId (markerId : number) : vscode.TextEditorDecorationType {
-		// TODO: get each site's color from map
-		let decoration = this.selectionDecorationByMarkerId.get(markerId);
-		if (!decoration) {
-			decoration = vscode.window.createTextEditorDecorationType({
-				backgroundColor: `rgba(123, 0, 0, 0.5)`
-			})
-			this.selectionDecorationByMarkerId.set(markerId, decoration)
+	private createDecorationFromSiteId (siteId : number) : SiteDecoration {
+		// TODO: get unique color for each site Id
+
+		const selectionDecorationRenderOption : vscode.DecorationRenderOptions = {
+			backgroundColor: `rgba(123, 0, 0, 0.5)`
 		}
-		return decoration
+
+		const curosrDecorationRenderOption : vscode.DecorationRenderOptions = {
+			border: 'solid rgba(123, 0, 0, 1)',
+			borderWidth: '0 1.5px 0 0',
+		}
+
+		const create = vscode.window.createTextEditorDecorationType
+
+		return {
+			selectionDecoration: create(selectionDecorationRenderOption),
+			cursorDecoration: create(curosrDecorationRenderOption)
+		}
 	}
 
-	private findOrCreateMarkRangeMapFromSiteId (siteId) : Map<number, vscode.Range> {
-		let markerIdRangeMap = this.selectionRangesBySiteId.get(siteId)
-		if (!markerIdRangeMap) {
-			markerIdRangeMap = new Map();
-			this.selectionRangesBySiteId.set(siteId, markerIdRangeMap);
+	private getCursorRangeFromSelection (selection : Selection) : Range {
+		const { range: { end, start } } = selection
+		if (selection.reversed) {
+			return {
+				start: start,
+				end: start
+			}
+		} else {
+			return {
+				start: end,
+				end: start
+			}
 		}
+	}
 
-		return markerIdRangeMap;
+	private isCursor (selection : Selection) : boolean {
+		const { start, end } = selection.range;
+		return (
+			start.column === end.column &&
+			start.row === end.row
+		);
 	}
 }
