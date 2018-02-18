@@ -54,16 +54,21 @@ export default class EditorBinding {
 			const markerUpdate = selections[markerId];
 			const markerIdInt = parseInt(markerId);
 			const decorationType = this.findOrCreateSelectionDecorationFromMarkerId(markerIdInt)
+			const oldRange = markerIdRangeMap.get(markerIdInt);
 
 			if (markerUpdate) {
 				const range = this.convertTeletypeRange(markerUpdate.range)
 				markerIdRangeMap.set(markerIdInt, range);
 				this.selectionRangesBySiteId.set(siteId, markerIdRangeMap);
 
+				if (oldRange) {
+					this.editor.setDecorations(NullDecoration, [oldRange]);
+				}
+
 				this.editor.setDecorations(decorationType, [range]);
 			} else { // selection clearance
 				this.selectionDecorationByMarkerId.delete(markerIdInt)
-				clearRanges = clearRanges.concat(markerIdRangeMap.get(markerIdInt))
+				clearRanges = clearRanges.concat(oldRange)
 			}
 		});
 		clearRanges = clearRanges.filter(r => r)
