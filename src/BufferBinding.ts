@@ -25,8 +25,8 @@ export default class BufferBinding {
 		this.editsQueue = new PQueue({concurrency: 1});
 	}
 
-	dipose () {
-
+	dispose () {
+		// TODO:
 	}
 
 	setBufferProxy (bufferProxy : BufferProxy) {
