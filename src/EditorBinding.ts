@@ -174,9 +174,29 @@ export default class EditorBinding {
 			backgroundColor: `rgba(123, 0, 0, 0.5)`
 		}
 
+		const {login: siteLogin} = this.portal.getSiteIdentity(siteId)
+
+		const nameTagStyleRules = {
+			position: 'absolute',
+			top: '1rem',
+			'border-radius': '0.15rem',
+			padding: '0px 0.5ch',
+			display: 'inline-block',
+			'pointer-events': 'none',
+			'font-size': '0.7rem',
+			'z-index': 1,
+			'font-weight': 'bold'
+		};
+
 		const curosrDecorationRenderOption : vscode.DecorationRenderOptions = {
 			border: 'solid rgba(123, 0, 0, 1)',
 			borderWidth: '0 1.5px 0 0',
+			after: {
+				contentText: siteLogin,
+				backgroundColor: 'rgba(123, 0, 0, 1)',
+				color: 'rgba(255, 255, 255, 1)',
+				textDecoration: `none; ${this.stringifyCssProperties(nameTagStyleRules)}`
+			}
 		}
 
 		const create = vscode.window.createTextEditorDecorationType
@@ -185,6 +205,14 @@ export default class EditorBinding {
 			selectionDecoration: create(selectionDecorationRenderOption),
 			cursorDecoration: create(curosrDecorationRenderOption)
 		}
+	}
+
+	// taken from VSLive Share 😂
+	private stringifyCssProperties(rules) {
+		return Object.keys(rules)
+				.map((rule) => {
+				return `${rule}: ${rules[rule]};`;
+		}).join(' ');
 	}
 
 	private getCursorRangeFromSelection (selection : Selection) : Range {
