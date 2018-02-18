@@ -110,7 +110,7 @@ export default class GuestPortalBinding {
 
 	dispose () {
 		console.error('dispose')
-		throw NotImplementedError
+		// throw NotImplementedError
 
 		// TODO: unregisterTextDocumentChangeEvent
 	}
