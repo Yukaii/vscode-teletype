@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 
 import BufferProxy from '@atom/teletype-client/lib/buffer-proxy';
-import * as PQueue from 'p-queue';
 
 import { Position, TextUdpate } from './teletype_types';
 
@@ -14,7 +13,6 @@ export default class BufferBinding {
 	private bufferProxy : BufferProxy;
 	public didDispose : Function;
 	private updatingText : boolean;
-	private editsQueue : PQueue;
 	private updateTextSync : Function;
 
 	constructor ({buffer, isHost, didDispose}) {
@@ -22,7 +20,6 @@ export default class BufferBinding {
 		this.isHost = isHost;
 		this.didDispose = didDispose;
 		this.updatingText = false;
-		this.editsQueue = new PQueue({concurrency: 1});
 	}
 
 	dispose () {

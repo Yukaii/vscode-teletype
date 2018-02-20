@@ -47,7 +47,6 @@
     "dotenv": "^5.0.0",
     "electron-webrtc-patched": "^0.3.0",
     "mkdirp-promise": "^5.0.1",
-    "node-fetch": "^2.0.0",
-    "p-queue": "^2.3.0"
+    "node-fetch": "^2.0.0"
   }
 }
