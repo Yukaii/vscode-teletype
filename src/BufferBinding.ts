@@ -46,7 +46,12 @@ export default class BufferBinding {
 	}
 
 	updateText (textUpdates: TextUdpate[]) {
-		this.editsQueue.add(() => this.updateTextPromise.bind(this)(textUpdates))
+		return this.editor.edit(builder => {
+			for (let i = textUpdates.length - 1; i >= 0; i--) {
+				const {oldStart, oldEnd, newText} = textUpdates[i]
+				builder.replace(this.createRange(oldStart, oldEnd), newText)
+			}
+		}, { undoStopBefore: false, undoStopAfter: true })
 	}
 
 	private createRange (start : Position, end : Position) : vscode.Range {
@@ -56,33 +61,25 @@ export default class BufferBinding {
 		)
 	}
 
-	propogateChanges (changes : vscode.TextDocumentContentChangeEvent[]) {
-		if (!this.updatingText) {
-			changes.forEach(change => {
-				const { start, end } = change.range;
-				this.bufferProxy.setTextInRange(
-					// oldStart
-					{ row: start.line, column: start.character },
-					// oldEnd
-					{ row: end.line, column: end.character },
-					change.text
-				)
-			})
-		}
+	onDidChangeBuffer (changes : vscode.TextDocumentContentChangeEvent[]) {
+		this.bufferProxy.onDidChangeBuffer(changes.map(change => {
+			const { start, end } = change.range;
+
+			return {
+				oldStart: { row: start.line, column: start.character },
+				oldEnd: { row: end.line, column: end.character },
+				newText: change.text
+			}
+		}))
 	}
 
-	private updateTextPromise (textUpdates: TextUdpate[]) : Promise<void> {
-		return new Promise((resolve, reject) => {
-			this.updatingText = true
-			this.editor.edit(builder => {
-				for (let i = textUpdates.length - 1; i >= 0; i--) {
-					const {oldStart, oldEnd, newText} = textUpdates[i]
-					builder.replace(this.createRange(oldStart, oldEnd), newText)
-				}
-			}, { undoStopBefore: false, undoStopAfter: true }).then(() => {
-				this.updatingText = false
-				resolve()
-			})
+	private updateTextPromise (textUpdates: TextUdpate[]) {
+		console.log('apply edits from builder')
+		return this.editor.edit(builder => {
+			for (let i = textUpdates.length - 1; i >= 0; i--) {
+				const {oldStart, oldEnd, newText} = textUpdates[i]
+				builder.replace(this.createRange(oldStart, oldEnd), newText)
+			}
 		})
 	}
 

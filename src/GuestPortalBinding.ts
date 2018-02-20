@@ -204,15 +204,15 @@ export default class GuestPortalBinding {
 	}
 
 	private registerWorkspaceEvents () {
-		vscode.workspace.onDidChangeTextDocument(this.applyChanges.bind(this))
+		vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this))
 		vscode.workspace.onWillSaveTextDocument(this.saveDocument.bind(this))
 		vscode.window.onDidChangeTextEditorSelection(this.triggerSelectionChanges.bind(this))
 	}
 
-	private applyChanges (event : vscode.TextDocumentChangeEvent) {
+	private onDidChangeTextDocument (event : vscode.TextDocumentChangeEvent) {
 		const bufferBinding = this.bufferBindingsByBuffer.get(event.document)
 		if (bufferBinding) {
-			bufferBinding.propogateChanges(event.contentChanges)
+			bufferBinding.onDidChangeBuffer(event.contentChanges)
 		}
 	}
 
