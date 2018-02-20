@@ -225,7 +225,7 @@ export default class EditorBinding {
 		} else {
 			return {
 				start: end,
-				end: start
+				end: end
 			}
 		}
 	}
