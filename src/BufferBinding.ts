@@ -70,16 +70,6 @@ export default class BufferBinding {
 		}))
 	}
 
-	private updateTextPromise (textUpdates: TextUdpate[]) {
-		console.log('apply edits from builder')
-		return this.editor.edit(builder => {
-			for (let i = textUpdates.length - 1; i >= 0; i--) {
-				const {oldStart, oldEnd, newText} = textUpdates[i]
-				builder.replace(this.createRange(oldStart, oldEnd), newText)
-			}
-		})
-	}
-
 	requestSavePromise () {
 		// never ending promise? 🎶
 		// FIXME: should patch TextDocument save event
